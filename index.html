@@ -216,10 +216,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
       let csvContent = '';
       teams.forEach(team => {
         csvContent += team.name + '\n';
-        csvContent += 'Номер,Имя,' + statKeys.join(',') + ',KPI\n';
+        csvContent += 'Номер,Имя,Всего очков' + statKeys.join(',') + ',KPI\n';
         team.players.forEach(p => {
          const kpi = (p['2p'] * 2 + p['3p'] * 3 + p['ft'] + p['rebOff'] + p['rebDef'] + p['assist'] + p['steal'] + p['block'] + p['foulOpp']) - (p['2pMiss'] + p['3pMiss'] + p['ftMiss'] + p['turnover'] + p['foulOwn']);
-          const row = [p.number,p.name].concat(statKeys.map(k=>p[k]), kpi.toFixed(2));
+          const all = (p['2p'] * 2 + p['3p'] * 3 + p['ft']);
+           const row = [p.number,p.name,all].concat(statKeys.map(k=>p[k]), kpi.toFixed(2));
           csvContent += row.join(',') + '\n';
         });
         csvContent += '\n';
