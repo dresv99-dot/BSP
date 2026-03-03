@@ -1,279 +1,739 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Статистика игроков</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-  header { display: flex; align-items: center; justify-content: space-between; background: #333; color: white; padding: 10px; flex-wrap: wrap; }
-  header button { margin-left: 5px; font-size: 16px; }
-  #scoreContainer { width: 100%; text-align: center; margin: 5px 0; }
-  #score { font-weight: bold; font-size: 18px; display: inline-block; }
-  #players { display: flex; flex-direction: row; padding: 10px; justify-content: space-around; }
-  .teamColumn { display: flex; flex-direction: column; width: 45%; }
-  .player { padding: 8px; border: 1px solid #ccc; margin-bottom: 5px; cursor: pointer; user-select: none; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; transition: background 0.2s; }
-  .playerHeader { font-weight: bold; text-align: center; }
-  .playerStats { font-size: 13px; text-align: center; }
-  .player.selected { background: #d0f0ff; border-color: #3399ff; }
-  #stats { display: flex; flex-wrap: wrap; padding: 10px; }
-  #stats button { flex: 1 1 20%; margin: 5px; padding: 10px; font-size: 14px; user-select: none; }
-  #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-  #modalContent { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 90%; overflow-y: auto; }
-  #teamSelect { margin-bottom: 10px; }
-  .addPlayerBtn { margin-top: 5px; }
-  .swapModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
-  .swapModalContent { background:white; padding:20px; border-radius:10px; max-width:400px; }
-  .playerSettingDiv { display: flex; justify-content: space-between; margin-bottom: 5px; }
-  .playerSettingDiv input { width: 70%; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Статистика игроков</title>
+  <style>
+/* --- Общие стили --- */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* --- Шапка --- */
+#header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 5px;
+  align-items: center;
+  padding: 10px;
+  background: #333;
+  color: white;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Кнопка версии */
+#versionBtn {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 3px;
+  background-color: #555;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#versionBtn:hover {
+  background: transparent !important;
+}
+
+/* Кнопки в шапке */
+#header button:not(#versionBtn) {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 3px;
+  background-color: #555;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#header button:not(#versionBtn):hover {
+  background-color: #444;
+}
+
+/* Счет */
+#scoreContainer {
+  grid-column: 2 / 3;
+  text-align: center;
+  margin: 5px 0;
+}
+#score {
+  font-weight: bold;
+  font-size: 16px;
+  color: white;
+}
+
+/* Контейнеры кнопок */
+.control-panel {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  grid-template-rows: repeat(2, auto);
+  gap: 5px;
+  
+}
+
+#plusOneBtn {
+  justify-self: end;
+  align-self: end;
+  padding: 6px 10px;
+  font-size: 12px;
+  background-color: #555;
+  border-radius: 3px;
+  cursor: pointer;
+}
+#plusOneBtn:hover {
+  background-color: #444;
+}
+
+/* --- Игроки --- */
+#players {
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
+  justify-content: space-around;
+}
+
+.teamColumn {
+  display: flex;
+  flex-direction: column;
+  width: 45%;
+}
+
+/* Карточка игрока */
+.player {
+  padding: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 5px;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background 0.2s;
+}
+
+.playerHeader {
+  font-weight: bold;
+  text-align: center;
+}
+
+.playerStats {
+  font-size: 13px;
+  text-align: center;
+}
+
+.player.selected {
+  background: #d0f0ff;
+  border-color: #3399ff;
+  color: black;
+}
+
+/* --- Статистические кнопки --- */
+#stats {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 10px;
+}
+
+#stats button {
+  flex: 1 1 20%;
+  margin: 5px;
+  padding: 8px;
+  font-size: 14px;
+  user-select: none;
+  border-radius: 3px;
+  background-color: #333;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#stats button:hover {
+  background-color: #444;
+}
+
+/* --- Модальные окна --- */
+#modal, .swapModal, #versionModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+}
+
+#modalContent, .swapModalContent, #versionModal > div {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90%;
+  overflow-y: auto;
+}
+
+/* --- Настройка выбора команды --- */
+#teamSelect label {
+  margin-right: 10px;
+}
+
+/* Кнопка добавления игрока */
+.addPlayerBtn {
+  margin-top: 5px;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+/* Форма настройки игрока */
+.playerSettingDiv {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.playerSettingDiv input {
+  width: 70%;
+  padding: 4px;
+  font-size: 12px;
+}
 </style>
 </head>
 <body>
+<div id="app-container">
 <header>
-  <div>
-    <button id="versionBtn">V 1.4.</button>
+<div id="header" style="display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto auto; gap: 5px; align-items: center; padding: 10px; background: #333; color: white; font-size: 14px; width: 100%; box-sizing: border-box;">
+  <div style="grid-column: 1; grid-row: 1;">
+    <button id="versionBtn">v.1.5.</button>
   </div>
-</header>
-<header style="display:flex; flex-direction:column; padding:10px; background:#333; color:white;">
-  <!-- Верхний ряд кнопок -->
-  <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-    <!-- Левая группа кнопок -->
-    <div style="display:flex; gap:5px; align-items:center;">
-      <button id="settingsBtn">⚙</button>
-      <button id="exportBtn">📄</button>
-      <button id="undoBtn">↩</button>
-      <button id="resetBtn">🗑</button>
-      <button id="toggleViewBtn">1</button>
-    </div>
-      <button id="addPointB">+1</button>
+  <div style="grid-column: 1; grid-row: 2; display: grid; grid-template-columns: repeat(3, auto); grid-template-rows: repeat(2, auto); gap:4px;">
+    <button id="settingsBtn">⚙️ Настройки</button>
+    <button id="exportBtn">💾 Экспорт</button>
+	<button id="undoBtn">🔄 Отмена</button>
+    <button id="resetBtn">🧺 Очистка</button>
+	<button></button>
+	<button id="toggleViewBtn">Вид  1️</button>
   </div>
-  <div id="scoreContainer">
-    <div id="score">Команда А 0/0 Команда Б</div>
+  <div style="grid-column: 2; grid-row: 2; display: flex; justify-content: center; align-items: center;">
+    <div id="score" style="font-weight: bold;">Команда А 0/0 Команда Б</div>
   </div>
-</header>
-<div id="players">
-  <div class="teamColumn" id="teamAColumn"></div>
-  <div class="teamColumn" id="teamBColumn"></div>
-</div>
-<div id="stats"></div>
-<div id="modal">
-  <div id="modalContent">
-    <h3>Настройки команд</h3>
-    <div id="teamSelect">
-      <label><input type="radio" name="teamChoice" value="0"> Команда А</label>
-      <label><input type="radio" name="teamChoice" value="1"> Команда Б</label>
-    </div>
-    <div>Название команды: <input type="text" id="teamName"></div>
-    <div id="playerSettings"></div>
-    <button class="addPlayerBtn">Добавить игрока</button>
-    <button id="saveSettings">Сохранить</button>
+  <div style="grid-column: 3; grid-row: 2; display: flex; justify-content: flex-end;">
+    <button id="addPointB">+1</button>
   </div>
-</div>
-<div class="swapModal" id="swapModal">
-  <div class="swapModalContent" id="swapModalContent"></div>
-</div>
 
-<div id="versionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-  <div style="background:white; padding:20px; border-radius:10px; max-width:400px;">
-   <h3>Бюджетники - Версия 1.4 - Изменения</h3>
-    <ul>
-      <li>Исправлена функция счета. Теперь счёт отображается корректно, как сумма очков всех игроков, а не только пятерки за площадке.</li>
-      <li>Исправлено отображение экспорта.</li>		
-    </ul>
-    <hr>
-    <h4>Дальнейшие планы</h3>
-     <ul>
-      <li>Добавление времени матча и периодов</li>
-      <li>Сохраниение команд</li>
-     </ul>
-    <button id="closeVersionModal">Закрыть</button>
+</div>
+ </header>
+  <!-- Игроки -->
+  <div id="players">
+    <div class="teamColumn" id="teamAColumn"></div>
+    <div class="teamColumn" id="teamBColumn"></div>
+  </div>
+
+  <!-- Статистика -->
+  <div id="stats"></div>
+
+  <!-- Модальные окна -->
+  <div id="modal">
+    <div id="modalContent">
+      <h3>Настройки команд</h3>
+      <div id="teamSelect">
+        <label><input type="radio" name="teamChoice" value="0"> Команда А</label>
+        <label><input type="radio" name="teamChoice" value="1"> Команда Б</label>
+      </div>
+      <div>Название команды: <input type="text" id="teamName"></div>
+      <div id="playerSettings"></div>
+      <div style="display: grid; grid-template-columns: repeat(1, auto); grid-template-rows: repeat(3, auto); gap:5px;">
+	  <button class="addPlayerBtn">Добавить игрока</button>
+      <button id="saveSettings">Сохранить</button>
+	  <input type="file" id="importCSV" accept=".csv">
+	  </div>
+    </div>
+  </div>
+
+  <div class="swapModal" id="swapModal">
+    <div class="swapModalContent" id="swapModalContent"></div>
+  </div>
+
+  <div id="versionModal">
+    <div>
+      <h3>Бюджетники - Версия 1.5 - Изменения</h3>
+      <ul>
+        <li>Изменено оформление программы;</li>
+		<li>В экспорт добавлены лидеры матча;</li>
+		<li>Добавлена функция импорта данных (!статистика подтягивается из выгруженных файлов!) @находится в настройках;</li>
+		<li>Добавлена возможность удаления игроков;</li>
+		<li>Исправлена undo.</li>
+		<li>Добавлен localStorage. Теперь при перезагрузке страницы ничего не будет обнуляться.</li>
+		<li>Исправлено выделение карточки. (Карточки с одинаковыми номерами и именами не выделяются вместе)</li>
+      </ul>
+      <hr>
+      <h4>Дальнейшие планы</h4>
+      <ul>
+        <li>Планов много. Времени мало. Лени ОЧЕНЬ МНОГО</li>
+      </ul>
+      <button id="closeVersionModal">Закрыть</button>
+    </div>
   </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', ()=>{
-  const teamAColumn = document.getElementById('teamAColumn');
-  const teamBColumn = document.getElementById('teamBColumn');
-  const statsEl = document.getElementById('stats');
-  const modal = document.getElementById('modal');
-  const teamNameInput = document.getElementById('teamName');
-  const playerSettingsEl = document.getElementById('playerSettings');
-  const addPlayerBtn = document.querySelector('.addPlayerBtn');
-  const saveSettingsBtn = document.getElementById('saveSettings');
-  const settingsBtn = document.getElementById('settingsBtn');
-  const exportBtn = document.getElementById('exportBtn');
-  const swapModal = document.getElementById('swapModal');
-  const swapModalContent = document.getElementById('swapModalContent');
-  const undoBtn = document.getElementById('undoBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const toggleViewBtn = document.getElementById('toggleViewBtn');
-  const addPointB = document.getElementById('addPointB');
-  const versionBtn = document.getElementById('versionBtn');
-  const versionModal = document.getElementById('versionModal');
-  const closeVersionModal = document.getElementById('closeVersionModal');
+// --- Основные элементы интерфейса ---
+const teamAColumn = document.getElementById('teamAColumn');
+const teamBColumn = document.getElementById('teamBColumn');
+const statsEl = document.getElementById('stats');
+const modal = document.getElementById('modal');
+const teamNameInput = document.getElementById('teamName');
+const playerSettingsEl = document.getElementById('playerSettings');
+const addPlayerBtn = document.querySelector('.addPlayerBtn');
+const saveSettingsBtn = document.getElementById('saveSettings');
+const settingsBtn = document.getElementById('settingsBtn');
+const swapModal = document.getElementById('swapModal');
+const swapModalContent = document.getElementById('swapModalContent');
+const resetBtn = document.getElementById('resetBtn');
+const toggleViewBtn = document.getElementById('toggleViewBtn');
+const addPointB = document.getElementById('addPointB');
+const versionBtn = document.getElementById('versionBtn');
+const versionModal = document.getElementById('versionModal');
+const closeVersionModal = document.getElementById('closeVersionModal');
 
-  let selectedTeamIndex = 0;
-  let viewMode = 1;
-  let teams = [{ name: 'Команда А', players: [], onCourt: [] }, { name: 'Команда Б', players: [], onCourt: [] }];
-  let selectedPlayer = null;
-  const statKeys = ['2p','2pMiss','3p','3pMiss','ft','ftMiss','rebOff','rebDef','assist','steal','block','turnover','foulOwn','foulOpp'];
-  const statNames = { '2p': '2 очка','2pMiss': '2 очка мимо','3p': '3 очка','3pMiss': '3 очка мимо','ft': 'Штрафной','ftMiss': 'Штрафной мимо','rebOff': 'Подбор СЩ','rebDef': 'Подбор ЧЩ','assist': 'Передача','steal': 'Перехват','block': 'Блокшот','turnover': 'Потеря','foulOwn': 'Фол свой','foulOpp': 'Фол чужой'};
-  let undoStack = [];
+// --- Версия программм ---
+if (versionBtn && versionModal && closeVersionModal) {
+  versionBtn.addEventListener('click', () => {
+    versionModal.style.display = 'flex';
+  });
+  closeVersionModal.addEventListener('click', () => {
+    versionModal.style.display = 'none';
+  });
+  versionModal.addEventListener('click', (e) => {
+    if (e.target === versionModal) versionModal.style.display = 'none';
+  });
+}
 
-  function initPlayers(){
-    teams.forEach(team=>{
-      if(team.players.length===0){
-        for(let i=1;i<=5;i++){
-          let p={number:i,name:'Игрок'+i};
-          statKeys.forEach(k=>p[k]=0);
-          team.players.push(p);
-        }
+// --- Переменные ---
+let selectedTeamIndex = 0;
+let viewMode = 1;
+let teams = [
+  { name: 'Команда А', players: [], onCourt: [], bench: [], _extraPoint: 0 },
+  { name: 'Команда Б', players: [], onCourt: [], bench: [], _extraPoint: 0 }
+];
+let selectedPlayer = null;
+let undoStack = [];
+
+const statKeys = ['2p','2pMiss','3p','3pMiss','ft','ftMiss','rebOff','rebDef','assist','steal','block','turnover','foulOwn','foulOpp'];
+const statNames = {
+  '2p':'2 очка','2pMiss':'2 очка мимо','3p':'3 очка','3pMiss':'3 очка мимо',
+  'ft':'Штрафной','ftMiss':'Штрафной мимо','rebOff':'Подбор СЩ','rebDef':'Подбор ЧЩ',
+  'assist':'Передача','steal':'Перехват','block':'Блокшот','turnover':'Потеря',
+  'foulOwn':'Фол свой','foulOpp':'Фол чужой'
+};
+
+// --- Функции ---
+// Создание игроков по умолчанию
+function initPlayers() {
+  teams.forEach(team => {
+    if (!team.players.length) {
+      for (let i=1;i<=5;i++){
+        let p = { number:i, name:`Игрок${i}` };
+        statKeys.forEach(k=>p[k]=0);
+        team.players.push(p);
       }
-      team.onCourt = team.players.slice(0,5);
-    });
-    renderPlayers(); renderStatsButtons(); renderScore();
-  }
-
-  function renderStatsButtons(){
-    statsEl.innerHTML='';
-    statKeys.forEach(k=>{
-      const btn = document.createElement('button');
-      btn.innerText = statNames[k];
-      btn.onclick = ()=>{ if(selectedPlayer){ modifyStat(selectedPlayer,k,1); selectPlayer(selectedPlayer); } };
-      statsEl.appendChild(btn);
-    });
-  }
-
-  function renderPlayers(){
-    if(viewMode===1){
-      teamAColumn.style.display='flex';
-      teamBColumn.style.display='flex';
-      teamAColumn.style.width='45%';
-      teamBColumn.style.width='45%';
-      teamAColumn.innerHTML=''; teamBColumn.innerHTML='';
-      teams[0].onCourt.forEach(p=>teamAColumn.appendChild(createPlayerDiv(p,0)));
-      teams[1].onCourt.forEach(p=>teamBColumn.appendChild(createPlayerDiv(p,1)));
-    } else {
-      teamAColumn.style.display='flex';
-      teamBColumn.style.display='none';
-      teamAColumn.style.width='100%';
-      teamAColumn.innerHTML='';
-      teams[0].onCourt.forEach(p=>teamAColumn.appendChild(createPlayerDiv(p,0)));
     }
-  }
+    syncTeamPlayers(team);
+  });
+  renderPlayers();
+  renderStatsButtons();
+  renderScore();
+}
 
-  function createPlayerDiv(player, teamIndex){
+// Синхронизация onCourt и bench
+function syncTeamPlayers(team) {
+  team.onCourt = team.players.slice(0,5);
+  team.bench = team.players.slice(5);
+}
+
+// Рендер кнопок статистики
+function renderStatsButtons() {
+  statsEl.innerHTML = '';
+  statKeys.forEach(k=>{
+    const btn = document.createElement('button');
+    btn.textContent = statNames[k];
+    btn.onclick = ()=>{
+      if(selectedPlayer) modifyStat(selectedPlayer,k,1);
+    };
+    statsEl.appendChild(btn);
+  });
+}
+
+// Рендер игроков на площадке
+function renderPlayers() {
+  teamAColumn.innerHTML=''; teamBColumn.innerHTML='';
+  if(viewMode===1){
+    teamAColumn.style.display='flex'; teamBColumn.style.display='flex';
+    teamAColumn.style.width='45%'; teamBColumn.style.width='45%';
+    teams[0].onCourt.forEach(p=>teamAColumn.appendChild(createPlayerDiv(p,0)));
+    teams[1].onCourt.forEach(p=>teamBColumn.appendChild(createPlayerDiv(p,1)));
+  } else {
+    teamAColumn.style.display='flex'; teamBColumn.style.display='none';
+    teamAColumn.style.width='100%';
+    teams[0].onCourt.forEach(p=>teamAColumn.appendChild(createPlayerDiv(p,0)));
+  }
+}
+
+// Создание карточки игрока
+function createPlayerDiv(player,teamIndex){
+  const div = document.createElement('div');
+  div.className='player';
+  if(selectedPlayer===player) div.classList.add('selected');
+  div.innerHTML=`
+    <div class="playerHeader">${player.number} ${player.name}</div>
+    <div class="playerStats">| 
+      2 очка: ${player['2p']}/${player['2pMiss']} | 
+      3 очка: ${player['3p']}/${player['3pMiss']} | 
+      Штрафной: ${player['ft']}/${player['ftMiss']} | 
+      Фол: ${player['foulOwn']}
+    </div>
+  `;
+  let pressTimer=null;
+  function startPress(e){e.stopPropagation(); pressTimer=setTimeout(()=>openSwapModal(player,teamIndex),500);}
+  function endPress(e){e.stopPropagation(); if(pressTimer){clearTimeout(pressTimer);pressTimer=null;selectPlayer(player);}}
+  div.addEventListener('mousedown',startPress);
+  div.addEventListener('mouseup',endPress);
+  div.addEventListener('mouseleave',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
+  div.addEventListener('touchstart',startPress);
+  div.addEventListener('touchend',endPress);
+  div.addEventListener('touchcancel',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
+  return div;
+}
+
+// Выбор игрока
+function selectPlayer(player){
+  selectedPlayer=player;
+  document.querySelectorAll('.player').forEach(div=>div.classList.remove('selected'));
+  document.querySelectorAll('.player').forEach(div=>{
+    if(div.innerText.includes(player.name)) div.classList.add('selected');
+  });
+}
+
+// Изменение статистики
+function modifyStat(player,key,delta){
+  if(!player[key]) player[key]=0;
+  player[key]+=delta;
+  undoStack.push({type:'stat',player,key,delta:-delta});
+  renderPlayers();
+  renderScore();
+  saveData();
+}
+
+// Замена игроков через запасных
+function openSwapModal(player,teamIndex){
+  swapModalContent.innerHTML='';
+  teams[teamIndex].bench.forEach(p=>{
+    const btn=document.createElement('button');
+    btn.textContent=p.name;
+    btn.onclick=()=>{
+      const idx=teams[teamIndex].onCourt.indexOf(player);
+      if(idx!==-1) teams[teamIndex].onCourt[idx]=p;
+      syncTeamPlayers(teams[teamIndex]);
+      swapModal.style.display='none';
+      renderPlayers();
+      renderScore();
+      saveData();
+    };
+    swapModalContent.appendChild(btn);
+  });
+  swapModal.style.display='flex';
+}
+swapModal.onclick=e=>{if(e.target===swapModal) swapModal.style.display='none';}
+
+// Переключение вида
+toggleViewBtn.onclick=()=>{
+  viewMode=viewMode===1?2:1;
+  toggleViewBtn.textContent=viewMode===1?'Вид  1️':'Вид  2️⃣';
+  renderPlayers();
+};
+
+// +1 команде B
+addPointB.onclick=()=>{
+  teams[1]._extraPoint=(teams[1]._extraPoint||0)+1;
+  undoStack.push({type:'bonus',teamIndex:1,deltaBonus:-1});
+  renderScore();
+  saveData();
+};
+
+// Рендер счета
+function renderScore(){
+  const sumA=teams[0].onCourt.reduce((s,p)=>s+p['2p']*2+p['3p']*3+p['ft'],0)+(teams[0]._extraPoint||0);
+  const sumB=teams[1].onCourt.reduce((s,p)=>s+p['2p']*2+p['3p']*3+p['ft'],0)+(teams[1]._extraPoint||0);
+  document.getElementById('score').innerText=`${teams[0].name} ${sumA}/${sumB} ${teams[1].name}`;
+}
+
+// --- Настройки команд ---
+settingsBtn.onclick=()=>{
+  modal.style.display='flex';
+  const checked=document.querySelector('input[name="teamChoice"]:checked');
+  selectedTeamIndex=checked?parseInt(checked.value):0;
+  loadTeamSettings(selectedTeamIndex);
+};
+function loadTeamSettings(index){
+  teamNameInput.value=teams[index].name;
+  renderPlayerSettings();
+}
+
+// --- Рендер игроков в настройках ---
+function renderPlayerSettings(){
+  playerSettingsEl.innerHTML='';
+  teams[selectedTeamIndex].players.forEach((p,i)=>{
     const div=document.createElement('div');
-    div.className='player';
-    if(selectedPlayer===player) div.classList.add('selected');
-    div.innerHTML = `<div class="playerHeader">${player.number} ${player.name}</div><div class="playerStats">| 2 очка: ${player['2p']}/${player['2pMiss']} | 3 очка: ${player['3p']}/${player['3pMiss']} | Штрафной: ${player['ft']}/${player['ftMiss']} | Фол: ${player['foulOwn']} |</div>`;
-    let pressTimer=null;
-    function startPress(e){ e.stopPropagation(); pressTimer=setTimeout(()=>{ openSwapModal(player,teamIndex); },500); }
-    function endPress(e){ e.stopPropagation(); if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; selectPlayer(player); } }
-    div.addEventListener('mousedown', startPress);
-    div.addEventListener('mouseup', endPress);
-    div.addEventListener('mouseleave', ()=>{ if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } });
-    div.addEventListener('touchstart', startPress);
-    div.addEventListener('touchend', endPress);
-    div.addEventListener('touchcancel', ()=>{ if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } });
-    return div;
-  }
-
-  function openSwapModal(player, teamIndex){
-    swapModalContent.innerHTML='';
-    teams[teamIndex].players.forEach(p=>{
-      if(!teams[teamIndex].onCourt.includes(p)){
-        const btn=document.createElement('button');
-        btn.innerText=p.name;
-        btn.onclick=()=>{
-          const idx=teams[teamIndex].onCourt.indexOf(player);
-          if(idx!==-1){ teams[teamIndex].onCourt[idx]=p; }
-          swapModal.style.display='none'; renderPlayers();
-        };
-        swapModalContent.appendChild(btn);
+    div.style.display='flex'; div.style.alignItems='center'; div.style.gap='5px';
+    const numberInput=document.createElement('input');
+    numberInput.type='number'; numberInput.value=p.number; numberInput.style.width='50px';
+    numberInput.oninput=()=>{p.number=parseInt(numberInput.value)||p.number; renderPlayers(); saveData();}
+    const nameInput=document.createElement('input'); nameInput.value=p.name; nameInput.style.flex='1';
+    nameInput.oninput=()=>{p.name=nameInput.value; renderPlayers(); saveData();}
+    const delBtn=document.createElement('button'); delBtn.textContent='Х'; delBtn.style.borderRadius='4px'; delBtn.style.padding='2px 6px';
+    delBtn.title='Удалить игрока';
+    delBtn.onclick=()=>{
+      if(confirm(`Удалить игрока ${p.name}?`)){
+        teams[selectedTeamIndex].players.splice(i,1);
+        syncTeamPlayers(teams[selectedTeamIndex]);
+        renderPlayerSettings();
+        renderPlayers();
+        renderScore();
+        saveData();
       }
-    });
-    swapModal.style.display='flex';
+    };
+    div.appendChild(numberInput); div.appendChild(nameInput); div.appendChild(delBtn);
+    playerSettingsEl.appendChild(div);
+  });
+}
+
+// Добавить игрока
+addPlayerBtn.onclick=()=>{
+  const newPlayer={number:teams[selectedTeamIndex].players.length+1,name:`Игрок${teams[selectedTeamIndex].players.length+1}`};
+  statKeys.forEach(k=>newPlayer[k]=0);
+  teams[selectedTeamIndex].players.push(newPlayer);
+  syncTeamPlayers(teams[selectedTeamIndex]);
+  renderPlayerSettings();
+  saveData();
+};
+
+// Сохранение настроек команды
+saveSettingsBtn.onclick=()=>{
+  teams[selectedTeamIndex].name=teamNameInput.value;
+  modal.style.display='none';
+  renderPlayers();
+  renderScore();
+  saveData();
+};
+
+// Сброс всего
+resetBtn.onclick=()=>{
+  teams[0]={name:'Команда А',players:[],onCourt:[],bench:[],_extraPoint:0};
+  teams[1]={name:'Команда Б',players:[],onCourt:[],bench:[],_extraPoint:0};
+  initPlayers();
+  saveData();
+};
+
+// --- Undo ---
+const undoBtn=document.getElementById('undoBtn');
+undoBtn.onclick=()=>{
+  if(undoStack.length===0) return;
+  const last=undoStack.pop();
+  if(last.type==='stat') last.player[last.key]+=last.delta;
+  else if(last.type==='bonus') teams[last.teamIndex]._extraPoint+=last.deltaBonus;
+  renderPlayers();
+  renderScore();
+  saveData();
+};
+
+// --- Сохранение и загрузка ---
+function saveData(){localStorage.setItem('basketballTeams',JSON.stringify(teams));}
+function loadData(){
+  const saved=localStorage.getItem('basketballTeams');
+  if(saved){
+    try{
+      const parsed=JSON.parse(saved);
+      if(Array.isArray(parsed)&&parsed.length===2){
+        teams=parsed;
+        teams.forEach(syncTeamPlayers);
+        return;
+      }
+    }catch(e){console.warn('Ошибка загрузки',e);}
   }
+  initPlayers();
+}
 
-  swapModal.onclick=e=>{ if(e.target==swapModal){ swapModal.style.display='none'; } };
+// --- Импорт CSV ---
+(function(){
+  const input=document.getElementById('importCSV');
+  input.addEventListener('change',function(event){
+    const file=event.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const text=e.target.result;
+      const lines=text.split('\n').map(l=>l.trim());
+      let newTeams=[],currentTeam=null,readingPlayers=false;
+      lines.forEach(line=>{
+        if(!line) return;
+        if(!line.includes(',')){
+          currentTeam={name:line,players:[],onCourt:[],bench:[],_extraPoint:0};
+          newTeams.push(currentTeam); readingPlayers=false; return;
+        }
+        if(line.startsWith('Номер,')){readingPlayers=true; return;}
+        if(!readingPlayers||!currentTeam) return;
+        const cols=line.split(',');
+        if(cols[1]==='ИТОГО'||line.startsWith('2-Х ОЧКОВЫЕ')||line.startsWith('3-Х ОЧКОВЫЕ')||line.startsWith('ШТРАФНЫЕ')||line.startsWith('ПОДБОРЫ')||line.startsWith('ПЕРЕДАЧИ')){readingPlayers=false; return;}
+        const player={
+          number:Number(cols[0])||0,
+          name:cols[1],
+          '2p':Number(cols[3])||0,'2pMiss':Number(cols[4])||0,
+          '3p':Number(cols[5])||0,'3pMiss':Number(cols[6])||0,
+          'ft':Number(cols[7])||0,'ftMiss':Number(cols[8])||0,
+          'rebOff':Number(cols[9])||0,'rebDef':Number(cols[10])||0,
+          'assist':Number(cols[12])||0,'steal':Number(cols[13])||0,
+          'block':Number(cols[14])||0,'turnover':Number(cols[15])||0,
+          'foulOwn':Number(cols[16])||0,'foulOpp':Number(cols[17])||0
+        };
+        currentTeam.players.push(player);
+      });
+      if(!newTeams.length){alert('CSV не распознан ❌'); return;}
+      newTeams.forEach(syncTeamPlayers);
+      teams=newTeams;
+      renderPlayers();
+      renderScore();
+      saveData();
+      alert('Импорт выполнен успешно ✅');
+    };
+    reader.readAsText(file);
+  });
+})();
 
-  function selectPlayer(player){
-    selectedPlayer=player;
-    document.querySelectorAll('.player').forEach(div=>div.classList.remove('selected'));
-    document.querySelectorAll('.player').forEach(div=>{ if(div.innerText.includes(player.name)) div.classList.add('selected'); });
-  }
+// --- Инициализация ---
+window.addEventListener('DOMContentLoaded',()=>{
+  loadData();
+  renderPlayers();
+  renderStatsButtons();
+  renderScore();
+});
 
-  function modifyStat(player,key,delta){
-    if(!player[key]) player[key]=0;
-    player[key]+=delta;
-    undoStack.push({player,key,delta:-delta});
-    renderPlayers(); renderScore();
-  }
-
-  function undo(){ if(undoStack.length===0) return; const last=undoStack.pop(); last.player[last.key]+=last.delta; renderPlayers(); renderScore(); }
-
-  toggleViewBtn.onclick=()=>{ viewMode = viewMode===1 ? 2 : 1; toggleViewBtn.innerText = viewMode===1 ? '1' : '2'; renderPlayers(); };
-  addPointB.onclick=()=>{ teams[1]._extraPoint=(teams[1]._extraPoint||0)+1; renderScore(); };
-  undoBtn.onclick=()=>{ undo(); };
-  resetBtn.onclick=()=>{ reset(); };
-
-exportBtn.onclick = () => {
+// --- Экспорт данных в CSV ---
+document.getElementById('exportBtn').addEventListener('click', function exportToCSV() {
   try {
     let csvContent = '';
+
     teams.forEach(team => {
-      csvContent += team.name + '\n';
+      csvContent += `${team.name}\n`;
       csvContent += 'Номер,Имя,Всего очков,2-очк,Мимо,3-очк,Мимо,Штраф,Мимо,Подбор СЩ,Подбор ЧЩ,Всего,Передача,Перехват,Блокшот,Потеря,Фолы свои,Фолы соперника,КПИ\n';
+
       let totalPoints = 0;
       let totalKpi = 0;
       let totalReb = 0;
       const totals = {};
       statKeys.forEach(k => totals[k] = 0);
+
+      let maxKpiPlayer = null;
+      let maxScorePlayer = null;
+      let maxReboundsPlayer = null;
+      let maxAssistsPlayer = null;
+      let maxKpiValue = Number.NEGATIVE_INFINITY;
+      let maxScoreValue = Number.NEGATIVE_INFINITY;
+      let maxReboundsValue = Number.NEGATIVE_INFINITY;
+      let maxAssistsValue = Number.NEGATIVE_INFINITY;
+
       team.players.forEach(p => {
-        const kpi = (p['2p'] * 2 + p['3p'] * 3 + p['ft'] + p['rebOff'] + p['rebDef'] + p['assist'] + p['steal'] + p['block'] + p['foulOpp']) - (p['2pMiss'] + p['3pMiss'] + p['ftMiss'] + p['turnover'] + p['foulOwn']);
-        const all = (p['2p'] * 2 + p['3p'] * 3 + p['ft']);
+        const kpi = (
+          p['2p'] * 2 + p['3p'] * 3 + p['ft'] +
+          p['rebOff'] + p['rebDef'] + p['assist'] + p['steal'] + p['block'] + p['foulOpp']
+        ) - (
+          p['2pMiss'] + p['3pMiss'] + p['ftMiss'] + p['turnover'] + p['foulOwn']
+        );
+
+        const allPoints = p['2p'] * 2 + p['3p'] * 3 + p['ft'];
         const rebTotal = p['rebOff'] + p['rebDef'];
-        totalPoints += all;
+
+        totalPoints += allPoints;
         totalKpi += kpi;
         totalReb += rebTotal;
+
         statKeys.forEach(k => totals[k] += p[k]);
-        const row = [p.number, p.name, all, p['2p'], p['2pMiss'], p['3p'], p['3pMiss'], p['ft'], p['ftMiss'], p['rebOff'], p['rebDef'], rebTotal, p['assist'], p['steal'], p['block'], p['turnover'], p['foulOwn'], p['foulOpp'], kpi.toFixed(2)];
+
+        // Запись строки игрока
+        const row = [
+          p.number, p.name, allPoints,
+          p['2p'], p['2pMiss'], p['3p'], p['3pMiss'], p['ft'], p['ftMiss'],
+          p['rebOff'], p['rebDef'], rebTotal,
+          p['assist'], p['steal'], p['block'], p['turnover'],
+          p['foulOwn'], p['foulOpp'], kpi.toFixed(2)
+        ];
         csvContent += row.join(',') + '\n';
+
+        // Поиск лидеров
+        if (kpi > maxKpiValue) { maxKpiValue = kpi; maxKpiPlayer = p; }
+        if (allPoints > maxScoreValue) { maxScoreValue = allPoints; maxScorePlayer = p; }
+        if (rebTotal > maxReboundsValue) { maxReboundsValue = rebTotal; maxReboundsPlayer = p; }
+        if (p['assist'] > maxAssistsValue) { maxAssistsValue = p['assist']; maxAssistsPlayer = p; }
       });
-      const totalRow = ['', 'ИТОГО', totalPoints, totals['2p'], totals['2pMiss'], totals['3p'], totals['3pMiss'], totals['ft'], totals['ftMiss'], totals['rebOff'], totals['rebDef'], totalReb, totals['assist'], totals['steal'], totals['block'], totals['turnover'], totals['foulOwn'], totals['foulOpp'], totalKpi.toFixed(2)];
+
+      // Итоговая строка
+      const totalRow = [
+        '', 'ИТОГО', totalPoints,
+        totals['2p'], totals['2pMiss'], totals['3p'], totals['3pMiss'], totals['ft'], totals['ftMiss'],
+        totals['rebOff'], totals['rebDef'], totalReb,
+        totals['assist'], totals['steal'], totals['block'], totals['turnover'],
+        totals['foulOwn'], totals['foulOpp'], totalKpi.toFixed(2)
+      ];
       csvContent += totalRow.join(',') + '\n\n';
+
+      // Процент реализации
+      const total2p = (totals['2p'] + totals['2pMiss']) ? ((totals['2p'] / (totals['2p'] + totals['2pMiss'])) * 100).toFixed(0) : 0;
+      const total3p = (totals['3p'] + totals['3pMiss']) ? ((totals['3p'] / (totals['3p'] + totals['3pMiss'])) * 100).toFixed(0) : 0;
+      const totalft = (totals['ft'] + totals['ftMiss']) ? ((totals['ft'] / (totals['ft'] + totals['ftMiss'])) * 100).toFixed(0) : 0;
+
+      csvContent += `2-Х ОЧКОВЫЕ,${total2p}%,,,, ЛИДЕР МАТЧА,${maxKpiPlayer.name}\n`;
+      csvContent += `3-Х ОЧКОВЫЕ,${total3p}%,,,, ОЧКИ,${maxScorePlayer.name}\n`;
+      csvContent += `ШТРАФНЫЕ,${totalft}%,,,, ПОДБОРЫ,${maxReboundsPlayer.name}\n`;
+      csvContent += `ПОДБОРЫ,${totalReb},,,, ПЕРЕДАЧИ,${maxAssistsPlayer.name}\n`;
+      csvContent += `ПЕРЕДАЧИ,${totals['assist']}\n\n`;
     });
+
+    // Скачивание CSV
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'basketball_stats.csv';
+    const fileName = `${teams[0].name}_${teams[1].name}.csv`.replace(/[\/\\?%*:|"<>]/g, '_');
+    a.download = fileName;
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
   } catch (e) {
-    alert('Ошибка при экспорте: ' + e);
+    alert(`Ошибка при экспорте: ${e}`);
   }
-};
-
-  const teamRadios = document.querySelectorAll('input[name="teamChoice"]');
-  teamRadios.forEach(radio=>{ radio.addEventListener('change', ()=>{ selectedTeamIndex=parseInt(radio.value); loadTeamSettings(selectedTeamIndex); }); });
-  settingsBtn.onclick=()=>{ modal.style.display='flex'; const checked=document.querySelector('input[name="teamChoice"]:checked'); selectedTeamIndex=checked?parseInt(checked.value):0; loadTeamSettings(selectedTeamIndex); };
-
-  function loadTeamSettings(index){ teamNameInput.value=teams[index].name; renderPlayerSettings(); }
-  function renderPlayerSettings(){ playerSettingsEl.innerHTML=''; teams[selectedTeamIndex].players.forEach((p,i)=>{ const div=document.createElement('div'); div.className='playerSettingDiv'; const numberInput=document.createElement('input'); numberInput.type='number'; numberInput.value=p.number; numberInput.oninput=()=>{ p.number=parseInt(numberInput.value); renderPlayers(); }; const input=document.createElement('input'); input.value=p.name; input.oninput=()=>{ p.name=input.value; renderPlayers(); }; div.appendChild(numberInput); div.appendChild(input); playerSettingsEl.appendChild(div); }); }
-  addPlayerBtn.onclick=()=>{ const newPlayer={number:teams[selectedTeamIndex].players.length+1,name:'Игрок'+(teams[selectedTeamIndex].players.length+1)}; statKeys.forEach(k=>newPlayer[k]=0); teams[selectedTeamIndex].players.push(newPlayer); renderPlayerSettings(); };
-  saveSettingsBtn.onclick=()=>{ teams[selectedTeamIndex].name=teamNameInput.value; modal.style.display='none'; renderPlayers(); renderScore(); };
-
-  function reset(){ teams.forEach(t=>t.players.forEach(p=>statKeys.forEach(k=>p[k]=0))); teams.forEach(t=>t._extraPoint=0); undoStack=[]; renderPlayers(); renderScore(); }
-  function renderScore(){ const sumA=teams[0]. players.reduce((s,p)=>s+p['2p']*2+p['3p']*3+p['ft'],0); const sumB=teams[1].players.reduce((s,p)=>s+p['2p']*2+p['3p']*3+p['ft'],0)+(teams[1]._extraPoint||0); document.getElementById('score').innerText=`${teams[0].name} ${sumA}/${sumB} ${teams[1].name}`; }
-
-  versionBtn.onclick = () => { versionModal.style.display = 'flex'; };
-  closeVersionModal.onclick = () => { versionModal.style.display = 'none'; };
-  versionModal.onclick = e => { if(e.target === versionModal) versionModal.style.display = 'none'; };
-  initPlayers();
 });
 </script>
+
 </body>
 </html>
