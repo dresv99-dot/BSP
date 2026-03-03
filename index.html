@@ -445,26 +445,25 @@ function modifyStat(player,key,delta){
 }
 
 // Замена игроков через запасных
-function openSwapModal(player,teamIndex){
-  swapModalContent.innerHTML='';
-  teams[teamIndex].bench.forEach(p=>{
-    const btn=document.createElement('button');
-    btn.textContent=p.name;
-    btn.onclick=()=>{
-      const idx=teams[teamIndex].onCourt.indexOf(player);
-      if(idx!==-1) teams[teamIndex].onCourt[idx]=p;
-      syncTeamPlayers(teams[teamIndex]);
-      swapModal.style.display='none';
+function openSwapModal(player, teamIndex) {
+  swapModalContent.innerHTML = '';
+  const benchPlayers = teams[teamIndex].players.filter(p => !teams[teamIndex].onCourt.includes(p));
+  benchPlayers.forEach(p => {
+    const btn = document.createElement('button');
+    btn.textContent = p.name;
+    btn.onclick = () => {
+      const idx = teams[teamIndex].onCourt.indexOf(player);
+      if (idx !== -1) {
+        teams[teamIndex].onCourt[idx] = p;
+      }
       renderPlayers();
       renderScore();
-      saveData();
+      swapModal.style.display = 'none';
     };
     swapModalContent.appendChild(btn);
   });
-  swapModal.style.display='flex';
+  swapModal.style.display = 'flex';
 }
-swapModal.onclick=e=>{if(e.target===swapModal) swapModal.style.display='none';}
-
 // Переключение вида
 toggleViewBtn.onclick=()=>{
   viewMode=viewMode===1?2:1;
