@@ -255,20 +255,20 @@ body {
   <!-- Модальные окна -->
   <div id="modal">
     <div id="modalContent">
-      <h3>Настройки команд</h3>
-      <div id="teamSelect">
-        <label><input type="radio" name="teamChoice" value="0"> Команда А</label>
-        <label><input type="radio" name="teamChoice" value="1"> Команда Б</label>
-      </div>
-      <div>Название команды: <input type="text" id="teamName"></div>
-      <div id="playerSettings"></div>
-      <div style="display: grid; grid-template-columns: repeat(1, auto); grid-template-rows: repeat(3, auto); gap:5px;">
-	  <button class="addPlayerBtn">Добавить игрока</button>
-      <button id="saveSettings">Сохранить</button>
-	  <input type="file" id="importCSV" accept=".csv">
-	  </div>
+        <h3>Настройки команд</h3>
+        <div id="teamSelect">
+            <label><input type="radio" name="teamChoice" value="0"> Команда А</label>
+            <label><input type="radio" name="teamChoice" value="1"> Команда Б</label>
+        </div>
+        <div>Название команды: <input type="text" id="teamName"></div>
+        <div id="playerSettings"></div>
+        <div style="display: grid; grid-template-columns: repeat(1, auto); grid-template-rows: repeat(3, auto); gap:5px;">
+            <button class="addPlayerBtn">Добавить игрока</button>
+            <button id="saveSettings">Сохранить</button>
+            <input type="file" id="importCSV" accept=".csv">
+        </div>
     </div>
-  </div>
+</div>
 
   <div class="swapModal" id="swapModal">
     <div class="swapModalContent" id="swapModalContent"></div>
@@ -284,7 +284,7 @@ body {
 		<li>Добавлена возможность удаления игроков;</li>
 		<li>Исправлена undo.</li>
 		<li>Добавлен localStorage. Теперь при перезагрузке страницы ничего не будет обнуляться.</li>
-		<li>Исправлено выделение карточки.</li>
+		<li>Исправлено выделение карточки. (Карточки с одинаковыми номерами и именами не выделяются вместе)</li>
       </ul>
       <hr>
       <h4>Дальнейшие планы</h4>
@@ -307,6 +307,7 @@ const playerSettingsEl = document.getElementById('playerSettings');
 const addPlayerBtn = document.querySelector('.addPlayerBtn');
 const saveSettingsBtn = document.getElementById('saveSettings');
 const settingsBtn = document.getElementById('settingsBtn');
+const teamRadios = document.querySelectorAll('input[name="teamChoice"]');
 const swapModal = document.getElementById('swapModal');
 const swapModalContent = document.getElementById('swapModalContent');
 const resetBtn = document.getElementById('resetBtn');
@@ -447,10 +448,26 @@ function modifyStat(player,key,delta){
 // Замена игроков через запасных
 function openSwapModal(player, teamIndex) {
   swapModalContent.innerHTML = '';
-  const benchPlayers = teams[teamIndex].players.filter(p => !teams[teamIndex].onCourt.includes(p));
+  const benchPlayers = teams[teamIndex].players.filter(p =>
+    !teams[teamIndex].onCourt.includes(p)
+  );
+  if (benchPlayers.length === 0) {
+    const msg = document.createElement('div');
+    msg.textContent = 'Нет игроков для замены';
+    msg.style.marginBottom = '10px';
+    swapModalContent.appendChild(msg);
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Закрыть';
+    closeBtn.onclick = () => {
+      swapModal.style.display = 'none';
+    };
+    swapModalContent.appendChild(closeBtn);
+    swapModal.style.display = 'flex';
+    return;
+  }
   benchPlayers.forEach(p => {
     const btn = document.createElement('button');
-    btn.textContent = p.name;
+    btn.textContent = `${p.number} ${p.name}`;
     btn.onclick = () => {
       const idx = teams[teamIndex].onCourt.indexOf(player);
       if (idx !== -1) {
@@ -458,16 +475,18 @@ function openSwapModal(player, teamIndex) {
       }
       renderPlayers();
       renderScore();
+      saveData();
       swapModal.style.display = 'none';
     };
     swapModalContent.appendChild(btn);
   });
   swapModal.style.display = 'flex';
 }
+
 // Переключение вида
 toggleViewBtn.onclick=()=>{
   viewMode=viewMode===1?2:1;
-  toggleViewBtn.textContent=viewMode===1?'Вид  1️':'Вид  2️⃣';
+  toggleViewBtn.textContent=viewMode===1?'1️':'2️⃣';
   renderPlayers();
 };
 
@@ -493,8 +512,17 @@ settingsBtn.onclick=()=>{
   selectedTeamIndex=checked?parseInt(checked.value):0;
   loadTeamSettings(selectedTeamIndex);
 };
-function loadTeamSettings(index){
-  teamNameInput.value=teams[index].name;
+
+teamRadios.forEach(radio => {
+  radio.addEventListener('change', function () {
+    selectedTeamIndex = parseInt(this.value);
+    loadTeamSettings(selectedTeamIndex);
+  });
+});
+
+function loadTeamSettings(index) {
+  const team = teams[index];
+  teamNameInput.value = team.name;
   renderPlayerSettings();
 }
 
@@ -537,12 +565,13 @@ addPlayerBtn.onclick=()=>{
 };
 
 // Сохранение настроек команды
-saveSettingsBtn.onclick=()=>{
-  teams[selectedTeamIndex].name=teamNameInput.value;
-  modal.style.display='none';
+saveSettingsBtn.onclick = () => {
+  const team = teams[selectedTeamIndex];
+  team.name = teamNameInput.value;
   renderPlayers();
   renderScore();
   saveData();
+  modal.style.display = 'none';
 };
 
 // Сброс всего
